@@ -1,1 +1,1 @@
-Just exercising/playing around with ERC20 transfers and allowances.
+Just exercising/playing around with transfers, allowances and msg.sender.

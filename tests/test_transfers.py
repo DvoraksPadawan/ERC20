@@ -14,7 +14,7 @@ def test_deploy():
     balance = Token.at(token).balanceOf(get_account())
     assert balance == withdrawed_balance
 
-def test_interaction():
+def test_contracts_interaction():
     starting_balance = 10*10**18
     swap = Swap.deploy(starting_balance, {"from" : get_account()})
     contract = Contract.deploy({"from" : get_account()})
@@ -28,7 +28,7 @@ def test_interaction():
     balance = Token.at(token).balanceOf(swap.address)
     assert balance == starting_balance - withdrawed_balance
 
-def test_allowance_goes_wrong():
+def test_contract_allowance_goes_wrong():
     starting_balance = 10*10**18
     swap = Swap.deploy(starting_balance, {"from" : get_account()})
     contract = Contract.deploy({"from" : get_account()})
@@ -42,7 +42,7 @@ def test_allowance_goes_wrong():
         transaction = contract.donate(donated_balance, swap.address)
     transaction.wait(1)
 
-def test_allowance():
+def test_contract_allowance():
     starting_balance = 10*10**18
     swap = Swap.deploy(starting_balance, {"from" : get_account()})
     contract = Contract.deploy({"from" : get_account()})
@@ -57,6 +57,35 @@ def test_allowance():
     transaction = contract.donate(donated_balance, swap.address)
     transaction.wait(1)
     balance = Token.at(token).balanceOf(contract.address)
+    assert balance == withdrawed_balance - donated_balance
+    balance = Token.at(token).balanceOf(swap.address)
+    assert balance == starting_balance - withdrawed_balance + donated_balance
+
+def test_wallet_allowance_goes_wrong():
+    starting_balance = 10*10**18
+    swap = Swap.deploy(starting_balance, {"from" : get_account()})
+    token = swap.getTokenAddress()
+    withdrawed_balance = 2*10**18
+    transaction = swap.withdrawMe(withdrawed_balance, {"from" : get_account()})
+    transaction.wait(1)
+    donated_balance = 1*10**18
+    with pytest.raises(exceptions.VirtualMachineError):
+        transaction = swap.fundMe(donated_balance)
+    transaction.wait(1)
+
+def test_wallet_allowance():
+    starting_balance = 10*10**18
+    swap = Swap.deploy(starting_balance, {"from" : get_account()})
+    token = swap.getTokenAddress()
+    withdrawed_balance = 2*10**18
+    transaction = swap.withdrawMe(withdrawed_balance, {"from" : get_account()})
+    transaction.wait(1)
+    donated_balance = 1*10**18
+    transaction = Token.at(token).approve(swap, donated_balance, {"from" : get_account()})
+    transaction.wait(1)
+    transaction = swap.fundMe(donated_balance)
+    transaction.wait(1)
+    balance = Token.at(token).balanceOf(get_account())
     assert balance == withdrawed_balance - donated_balance
     balance = Token.at(token).balanceOf(swap.address)
     assert balance == starting_balance - withdrawed_balance + donated_balance
